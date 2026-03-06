@@ -1,0 +1,250 @@
+/* Insertar Usuarios */
+
+db.users.insertMany([
+  {
+    name: "Carlos Gomez",
+    email: "carlos.gomez@email.com",
+    age: 28,
+    country: "Colombia",
+    subscription: "premium",
+    watchHistory: [
+      {
+        contentId: 1,
+        title: "Inception",
+        watchedAt: new Date("2024-01-15")
+      },
+      {
+        contentId: 3,
+        title: "Breaking Bad",
+        watchedAt: new Date("2024-02-10")
+      }
+    ]
+  },
+  {
+    name: "Laura Martinez",
+    email: "laura.m@email.com",
+    age: 32,
+    country: "Mexico",
+    subscription: "basic",
+    watchHistory: [
+      {
+        contentId: 2,
+        title: "Interstellar",
+        watchedAt: new Date("2024-02-01")
+      }
+    ]
+  },
+  {
+    name: "Andres Ruiz",
+    email: "andres.ruiz@email.com",
+    age: 24,
+    country: "Colombia",
+    subscription: "premium",
+    watchHistory: []
+  }
+])
+
+
+/* Insertar contenido */
+
+db.content.insertMany([
+  {
+    contentId: 1,
+    title: "Inception",
+    type: "movie",
+    genre: ["Sci-Fi", "Action"],
+    duration: 148,
+    releaseYear: 2010,
+    rating: 4.8
+  },
+  {
+    contentId: 2,
+    title: "Interstellar",
+    type: "movie",
+    genre: ["Sci-Fi", "Drama"],
+    duration: 169,
+    releaseYear: 2014,
+    rating: 4.7
+  },
+  {
+    contentId: 3,
+    title: "Breaking Bad",
+    type: "series",
+    genre: ["Crime", "Drama"],
+    seasons: 5,
+    releaseYear: 2008,
+    rating: 4.9
+  },
+  {
+    contentId: 4,
+    title: "Stranger Things",
+    type: "series",
+    genre: ["Sci-Fi", "Horror"],
+    seasons: 4,
+    releaseYear: 2016,
+    rating: 4.6
+  }
+])
+
+
+/* Insertar ratings */
+
+db.ratings.insertMany([
+  {
+    userId: 1,
+    contentId: 1,
+    rating: 5,
+    comment: "Amazing movie!",
+    date: new Date("2024-03-01")
+  },
+  {
+    userId: 2,
+    contentId: 2,
+    rating: 4,
+    comment: "Great story",
+    date: new Date("2024-03-03")
+  },
+  {
+    userId: 1,
+    contentId: 3,
+    rating: 5,
+    comment: "Best series ever",
+    date: new Date("2024-03-05")
+  }
+])
+
+
+/* Consultas con operadores */
+
+db.content.find({
+  duration: { $gt: 120 }
+})
+
+db.users.find({
+  age: { $gt: 25 }
+})
+
+db.content.find({
+  releaseYear: {
+    $gt: 2010,
+    $lt: 2020
+  }
+})
+
+db.content.find({
+  genre: { $in: ["Sci-Fi"] }
+})
+
+db.users.find({
+  $and: [
+    { country: "Colombia" },
+    { subscription: "premium" }
+  ]
+})
+
+db.users.find({
+  $or: [
+    { country: "Colombia" },
+    { country: "Mexico" }
+  ]
+})
+
+db.content.find({
+  title: { $regex: "star", $options: "i" }
+})
+
+
+/* Actualizar */
+
+db.content.updateOne(
+  { title: "Interstellar" },
+  {
+    $set: {
+      rating: 4.9
+    }
+  }
+)
+
+db.users.updateMany(
+  { country: "Colombia" },
+  {
+    $set: {
+      subscription: "premium"
+    }
+  }
+)
+
+
+/* Eliminar */
+
+db.ratings.deleteOne({
+  comment: "Great story"
+})
+
+db.users.deleteMany({
+  age: { $lt: 18 }
+})
+
+
+/* INDEX */
+
+db.content.createIndex({
+  title: 1
+})
+
+db.content.createIndex({
+  genre: 1
+})
+
+db.users.createIndex({
+  email: 1
+})
+
+db.content.getIndexes()
+db.users.getIndexes()
+
+
+/* Pipelines */
+
+Agregación 1: Calificación promedio por contenido
+
+db.ratings.aggregate([
+  {
+    $group: {
+      _id: "$contentId",
+      averageRating: { $avg: "$rating" },
+      totalRatings: { $sum: 1 }
+    }
+  },
+  {
+    $sort: {
+      averageRating: -1
+    }
+  }
+])
+
+Agregación 2: Número de contenidos por género
+
+db.content.aggregate([
+  {
+    $unwind: "$genre"
+  },
+  {
+    $group: {
+      _id: "$genre",
+      totalContent: { $sum: 1 }
+    }
+  },
+  {
+    $sort: {
+      totalContent: -1
+    }
+  },
+  {
+    $project: {
+      genre: "$_id",
+      totalContent: 1,
+      _id: 0
+    }
+  }
+])
